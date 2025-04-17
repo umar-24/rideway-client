@@ -1,5 +1,7 @@
 // ignore_for_file: sort_child_properties_last
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/utils.dart';
@@ -11,7 +13,46 @@ import 'package:rideway/features/home/screen/registration/vehical_selection_ctc.
 import 'package:rideway/features/home/screen/registration/vehical_selection_freight.dart';
 import 'package:rideway/widgets/build_options.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String userName = '';
+  String? userImage;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  void fetchUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // If Google sign-in
+      if (user.providerData.any((e) => e.providerId == 'google.com')) {
+        setState(() {
+          userName = user.displayName ?? 'Guest';
+          userImage = user.photoURL;
+        });
+      } else {
+        // Otherwise check from Realtime Database
+        final uid = user.uid;
+        final ref =
+            FirebaseDatabase.instance.ref().child('User').child(uid);
+        final snapshot = await ref.get();
+        if (snapshot.exists) {
+          final name = snapshot.child('name').value;
+          setState(() {
+            userName = name?.toString() ?? 'Guest';
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,14 +66,18 @@ class ProfileScreen extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        title: const Text('Umar', style: TextStyle(color: Colors.white)),
-        actions: const [
+        title: Text(userName, style: const TextStyle(color: Colors.white)),
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              backgroundColor: Colors.blueGrey,
-              child: Icon(Icons.person, color: Colors.white),
-            ),
+            padding: const EdgeInsets.only(right: 16.0),
+            child: userImage != null
+                ? CircleAvatar(
+                    backgroundImage: NetworkImage(userImage!),
+                  )
+                : const CircleAvatar(
+                    backgroundColor: Colors.blueGrey,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
           ),
         ],
       ),
@@ -87,7 +132,6 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
             Container(
               decoration: BoxDecoration(
@@ -118,7 +162,6 @@ class ProfileScreen extends StatelessWidget {
                         width: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-
                           color: Colors.greenAccent,
                         ),
                         child: Icon(

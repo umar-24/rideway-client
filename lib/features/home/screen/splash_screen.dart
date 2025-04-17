@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rideway/core/constants/colors.dart';
 import 'package:rideway/core/constants/images.dart';
-import 'package:rideway/features/home/screen/welcome_screen.dart';
+import 'package:rideway/services/auth_gate.dart';
 
 class SplashScreen extends StatelessWidget {
   @override
@@ -10,7 +10,7 @@ class SplashScreen extends StatelessWidget {
     // Simulate a delay for the splash screen
     Future.delayed(Duration(seconds: 3), () {
       // Navigate to the Home Screen after the delay
-      Get.offAll(WelcomeScreen());
+      Get.offAll(AuthGate());
     });
 
     return Scaffold(

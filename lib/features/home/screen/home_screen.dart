@@ -165,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                           SizedBox(height: screenHeight * 0.015),
                           InputField(
                             icon: Icons.search,
-                            hint: 'Street No 19',
+                            hint: 'Destination',
                             screenWidth: screenWidth,
                           ),
                           SizedBox(height: screenHeight * 0.015),

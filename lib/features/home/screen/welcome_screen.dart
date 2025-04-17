@@ -1,6 +1,11 @@
+// ignore_for_file: avoid_print, unnecessary_null_comparison
+
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
 import 'package:rideway/core/constants/colors.dart';
 import 'package:rideway/core/constants/images.dart';
+import 'package:rideway/features/home/screen/home_screen.dart';
+import 'package:rideway/services/auth_service.dart';
 import 'package:rideway/services/login_or_register.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -11,9 +16,7 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: WelcomeScreen(),
-    );
+    return MaterialApp(home: WelcomeScreen());
   }
 }
 
@@ -31,10 +34,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         centerTitle: true,
-        title: Image.asset(
-          AppImages.logo,
-          height: 20,
-        ),
+        title: Image.asset(AppImages.logo, height: 40),
       ),
       backgroundColor: Colors.white,
       body: Padding(
@@ -87,15 +87,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         // Handle continue with email logic here
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> LoginOrRegister()));
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => LoginOrRegister(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         backgroundColor: AppColors.primaryColor,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 50,
+                          vertical: 15,
+                        ),
                       ),
                       child: Text(
                         'Continue with Email',
@@ -107,16 +114,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Handle continue with Google logic here
+                        final userCredential =
+                            await AuthService().signInWithGoogle();
+
+                        if (userCredential == null) {
+                          // Handle sign-in failure (e.g., show an error message)
+                          print('Google sign-in failed or was canceled');
+                        } else {
+                          // Sign-in successful, navigate to BottomNavBarPage
+                          Get.offAll(HomePage());
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         backgroundColor: Colors.white,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 50,
+                          vertical: 15,
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

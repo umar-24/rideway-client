@@ -1,15 +1,21 @@
+// ignore_for_file: unused_local_variable
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/get_navigation.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:rideway/core/constants/colors.dart';
 import 'package:rideway/core/constants/images.dart';
+import 'package:rideway/features/auth/screen/email_verify_screen.dart';
 import 'package:rideway/widgets/my_textfeild.dart';
 import 'package:rideway/widgets/rounded_button.dart';
 
-
 class RegisterScreen extends StatefulWidget {
   final void Function()? onPressed;
-  const RegisterScreen({super.key, required this.onPressed});
+  const RegisterScreen({super.key, this.onPressed});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -19,15 +25,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
-  TextEditingController firstNameController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
-  // final FirebaseAuth _auth = FirebaseAuth.instance;
-  // final DatabaseReference _database =
-  //     FirebaseDatabase.instance.ref().child('User');
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final DatabaseReference _database = FirebaseDatabase.instance.ref().child(
+    'User',
+  );
 
   bool loading = false;
   late bool isObsecure;
   late bool isConfirmObsecure;
+  bool isChecked = false;
+  bool isCheckError = false;
 
   @override
   void initState() {
@@ -41,9 +50,95 @@ class _RegisterScreenState extends State<RegisterScreen> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
-    firstNameController.dispose();
-    lastNameController.dispose();
+    nameController.dispose();
     super.dispose();
+  }
+
+  void register() async {
+    // Validate checkbox
+    if (!isChecked) {
+      setState(() {
+        isCheckError = true;
+      });
+      Get.snackbar(
+        "Required",
+        "You must accept the Terms & Conditions",
+        snackPosition: SnackPosition.BOTTOM,
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    setState(() {
+      loading = true;
+    });
+
+    if (passwordController.text == confirmPasswordController.text) {
+      try {
+        // Create user with email and password
+        UserCredential userCredential = await _auth
+            .createUserWithEmailAndPassword(
+              email: emailController.text.trim(),
+              password: passwordController.text.trim(),
+            );
+
+        final userId = userCredential.user!.uid;
+        //       // Get the user ID from the auth result
+        await _database.child(userId).set({
+          "name": nameController.text.toString(),
+          "email": emailController.text.toString(),
+          "password": passwordController.text.toString(),
+        });
+
+        User? user = userCredential.user;
+
+        if (user != null && !user.emailVerified) {
+          await user.sendEmailVerification(); // Send email verification
+
+          Get.snackbar(
+            "Email Sent",
+            "Verification email sent. Please verify before continuing.",
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 3),
+          );
+
+          await _auth
+              .signOut(); // Optional: sign out after sending verification
+
+          Get.to(EmailVerifyScreen()); // Navigate to verification screen
+        }
+      } on FirebaseAuthException catch (error) {
+        Get.snackbar(
+          "Authentication Error",
+          error.message ?? "Authentication error",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 3),
+        );
+      } catch (e) {
+        Get.snackbar(
+          "Error",
+          "An error occurred: $e",
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 3),
+        );
+      } finally {
+        setState(() {
+          loading = false;
+        });
+      }
+    } else {
+      Get.snackbar(
+        "Error",
+        "Passwords do not match!",
+        snackPosition: SnackPosition.BOTTOM,
+        duration: Duration(seconds: 3),
+      );
+      setState(() {
+        loading = false;
+      });
+    }
   }
 
   // void register() async {
@@ -65,21 +160,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   //       Toasts().toastMessages("Account Created");
 
   //       // Save user data to Realtime Database
-  //       final userId = userCredential.user!.uid;
+  //       // final userId = userCredential.user!.uid;
   //       // Get the user ID from the auth result
-  //     await _database.child(userId).set({
-  //       "first name": firstNameController.text.toString(),
-  //       "last name": lastNameController.text.toString(),
-  //       "email": emailController.text.toString(),
-  //       "password": passwordController.text.toString()
-  //     });
-
+  //     // await _database.child(userId).set({
+  //     //   "first name": firstNameController.text.toString(),
+  //     //   "last name": lastNameController.text.toString(),
+  //     //   "email": emailController.text.toString(),
+  //     //   "password": passwordController.text.toString()
+  //     // });
 
   //       // Navigate to next screen
   //       Navigator.pushReplacement(
   //         // ignore: use_build_context_synchronously
   //         context,
-  //         MaterialPageRoute(builder: (context) => const BottomNavBar()),
+  //         MaterialPageRoute(builder: (context) => const HomePage()),
   //       );
 
   //     } on FirebaseAuthException catch (error) {
@@ -125,45 +219,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: screenHeight * 0.02),
                 const Text(
                   "Create Account!",
-                  style: TextStyle(
-                    fontSize: 26,
-                    color: Colors.black,
-                  ),
+                  style: TextStyle(fontSize: 26, color: Colors.black),
                 ),
                 SizedBox(height: screenHeight * 0.01),
                 const Text(
                   "Please enter valid information to access your account.",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.black),
                 ),
                 SizedBox(height: screenHeight * 0.03),
                 Column(
                   children: [
-                    Row(
-                      children: [
-                        // FIRST NAME
-                        Expanded(
-                          child: MyTextFeild(
-                            controller: firstNameController,
-                            hintText: "First Name",
-                            obscureText: false,
-                            prefixIcon: (Iconsax.user),
-                          ),
-                        ),
-                        SizedBox(width: screenWidth * 0.03),
-                        // LAST NAME
-                        Expanded(
-                          child: MyTextFeild(
-                            controller: lastNameController,
-                            hintText: "Last Name",
-                            obscureText: false,
-                            prefixIcon: (Iconsax.user),
-                          ),
-                        ),
-                      ],
+                    MyTextFeild(
+                      controller: nameController,
+                      hintText: "Name",
+                      obscureText: false,
+                      prefixIcon: (Iconsax.user),
                     ),
+
                     SizedBox(height: screenHeight * 0.02),
                     // email
                     MyTextFeild(
@@ -185,9 +257,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             isObsecure = !isObsecure;
                           });
                         },
-                        icon: isObsecure
-                            ? const Icon(Iconsax.eye)
-                            : const Icon(Iconsax.eye_slash),
+                        icon:
+                            isObsecure
+                                ? const Icon(Iconsax.eye)
+                                : const Icon(Iconsax.eye_slash),
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.02),
@@ -203,21 +276,98 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             isConfirmObsecure = !isConfirmObsecure;
                           });
                         },
-                        icon: isConfirmObsecure
-                            ? const Icon(Iconsax.eye)
-                            : const Icon(Iconsax.eye_slash),
+                        icon:
+                            isConfirmObsecure
+                                ? const Icon(Iconsax.eye)
+                                : const Icon(Iconsax.eye_slash),
                       ),
                     ),
                     SizedBox(height: screenHeight * 0.03),
                   ],
                 ),
+
+                // Terms and Conditions
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Checkbox(
+                          checkColor: Colors.white,
+                          activeColor: AppColors.primaryColor,
+                          value: isChecked,
+                          onChanged: (value) {
+                            setState(() {
+                              isChecked = value!;
+                              isCheckError = false; // clear error
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'By signing up, I agree to the ',
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                                TextSpan(
+                                  text: 'Terms & Conditions',
+                                  style: TextStyle(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  recognizer:
+                                      TapGestureRecognizer()
+                                        ..onTap = () {
+                                          // Navigate to Terms & Conditions
+                                        },
+                                ),
+                                TextSpan(
+                                  text: ' and ',
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                                TextSpan(
+                                  text: 'Privacy Policy',
+                                  style: TextStyle(
+                                    color: AppColors.primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  recognizer:
+                                      TapGestureRecognizer()
+                                        ..onTap = () {
+                                          // Navigate to Privacy Policy
+                                        },
+                                ),
+                                TextSpan(
+                                  text: '.',
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (isCheckError)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12.0, top: 4),
+                        child: Text(
+                          "Please accept the terms and conditions",
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+
                 // Register Button
                 RoundedButton(
                   title: "Register",
                   buttonColor: AppColors.primaryColor,
                   loading: loading,
                   onTap: () {
-                    // register();
+                    register();
                   },
                 ),
                 SizedBox(height: screenHeight * 0.02),
@@ -232,11 +382,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: widget.onPressed,
                       child: const Text(
                         "Login",
-                        style: TextStyle(
-                          color: AppColors.primaryColor,
-                        ),
+                        style: TextStyle(color: AppColors.primaryColor),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ],

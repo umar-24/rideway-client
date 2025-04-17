@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/get_navigation.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:rideway/core/constants/colors.dart';
 import 'package:rideway/core/constants/images.dart';
@@ -9,7 +12,7 @@ import 'package:rideway/widgets/rounded_button.dart';
 
 class LoginScreen extends StatefulWidget {
   final void Function()? onPressed;
-  const LoginScreen({super.key, required this.onPressed});
+  const LoginScreen({super.key, this.onPressed});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,7 +21,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  // final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   bool loading = false;
   late bool isObsecure;
 
@@ -48,6 +51,44 @@ class _LoginScreenState extends State<LoginScreen> {
   //    });
   // }
 
+void login() {
+  setState(() {
+    loading = true;
+  });
+
+  _auth.signInWithEmailAndPassword(
+    email: emailController.text.toString(),
+    password: passwordController.text.toString(),
+  ).then((value) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomePage()),
+    );
+    // Show success Snackbar
+    Get.snackbar(
+      "Sign In Successful",
+      "Welcome back!",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppColors.primaryColor,
+      colorText: Colors.white,
+    );
+    setState(() {
+      loading = false;
+    });
+  }).onError((error, StackTrace) {
+    // Show error Snackbar
+    Get.snackbar(
+      "Sign In Failed",
+      error.toString(),
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    setState(() {
+      loading = false;
+    });
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -140,11 +181,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   buttonColor: AppColors.primaryColor,
                   loading: loading,
                   onTap: () {
-                  //  login();
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>  HomePage()));
+                   login();
+                  // Navigator.pushReplacement(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) =>  HomePage()));
                   },
                 ),
                 SizedBox(height: screenHeight * 0.03),

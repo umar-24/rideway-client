@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "565214622762",
+    "project_id": "rideway-8fdf6",
+    "storage_bucket": "rideway-8fdf6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:565214622762:android:8a571190f4749c0a83bf53",
+        "android_client_info": {
+          "package_name": "com.coderex.rideway"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEQ04XKvxet_Ryipzu7CUZCus2GCaNu1Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
